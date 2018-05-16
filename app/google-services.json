@@ -1,0 +1,55 @@
+{
+  "project_info": {
+    "project_number": "1074711108153",
+    "firebase_url": "https://labmoviles4-f4b6f.firebaseio.com",
+    "project_id": "labmoviles4-f4b6f",
+    "storage_bucket": "labmoviles4-f4b6f.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1074711108153:android:8ba5b7f7e00e9af4",
+        "android_client_info": {
+          "package_name": "com.example.miguelmendez.laboratorio4moviles"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1074711108153-9gefphob7ervkh16rrs8t76mabotftgd.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.miguelmendez.laboratorio4moviles",
+            "certificate_hash": "5c6be0a5ea2d4198f20c5a98345677a385df55f6"
+          }
+        },
+        {
+          "client_id": "1074711108153-843e9rsd63q8bfvvhe224bln27g65emb.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCN8GR0aauAtODiPd_3ujSUmHr8V8dd-i4"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 2,
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1074711108153-843e9rsd63q8bfvvhe224bln27g65emb.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
