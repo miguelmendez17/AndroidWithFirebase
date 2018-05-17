@@ -1,5 +1,7 @@
 package com.example.miguelmendez.laboratorio4moviles;
 
+import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.net.Uri;
@@ -38,10 +40,16 @@ public class MainActivity extends AppCompatActivity {
     Button uploadImage,save;
     EditText name, email, password;
     Boolean existUri = false;
+    private Boolean existUser = false;
+    public Boolean errorAuth = false;
     ImageView imagen;
 
+    String globalName,globalEmail, globalPassword;
     private FirebaseAuth mAuth;
     private StorageReference mStorageRef;
+    private FirebaseDatabase database;
+    private DatabaseReference myRef;
+
     private static final String TAG = "Auth";
 
     @Override
@@ -53,9 +61,13 @@ public class MainActivity extends AppCompatActivity {
         name = findViewById(R.id.name);
         email = findViewById(R.id.email);
         password = findViewById(R.id.password);
-        imagen = (ImageView)findViewById(R.id.image);
+        imagen = findViewById(R.id.image);
         mAuth = FirebaseAuth.getInstance();
         mStorageRef = FirebaseStorage.getInstance().getReference();
+        database = FirebaseDatabase.getInstance();
+        myRef = database.getReference("User");
+        validateUserExistingDatabase();
+
         if (!hasCamera())
             uploadImage.setEnabled( false ) ;
 
@@ -68,43 +80,57 @@ public class MainActivity extends AppCompatActivity {
         save.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-
                 if(validateFields()){
-                    FirebaseDatabase database = FirebaseDatabase.getInstance();
-                    DatabaseReference myRef = database.getReference("User");
-                    String nombre = name.getText().toString();
-                    String correo = email.getText().toString();
-                    String contr = password.getText().toString();
-                    uploadImage();
-                    User user=new User();
-                    user.setNombre(nombre);
-                    user.setCorreo(correo);
-                    user.setContrasenna(contr);
-                    myRef.child(String.valueOf(nombre)).setValue(user);
-                    name.setText("");
-                    email.setText("");
-                    password.setText("");
-                    Toast.makeText(MainActivity.this, "Successfuly.", Toast.LENGTH_SHORT).show();
+                    validateUserExistingDatabase();
+                    if(existUser){
+                        dialogShow();
+                    }
+                    else{
+                        newUser(globalEmail,globalPassword);
+                    }
+
                 }
+                existUser = false;
+            }
+        });
+    }
+
+
+
+    public void saveInformation(){
+        database = FirebaseDatabase.getInstance();
+        myRef = database.getReference("User");
+        User user = new User();
+        user.setNombre(globalName);
+        user.setCorreo(globalEmail);
+        user.setContrasenna(globalPassword);
+        uploadImage();
+        myRef.child(String.valueOf(globalName)).setValue(user);
+        name.setText("");
+        email.setText("");
+        password.setText("");
+        Toast.makeText(MainActivity.this, "Successfuly.", Toast.LENGTH_SHORT).show();
+    }
+
+    public void validateUserExistingDatabase(){
+        myRef.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                for(DataSnapshot postSnapshot: dataSnapshot.getChildren()){
+                    User user = postSnapshot.getValue(User.class);
+                    if(user.nombre.equals(name.getText().toString())){
+                        existUser = true;
+                    }
+                }
+            }
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
 
             }
         });
     }
 
 
-  /*  public void validateUserExistingDatabase(){
-        FirebaseDatabase database = FirebaseDatabase.getInstance();
-        DatabaseReference myRef = database.getReference("User");
-
-        for(DataSnapshot postSnapshot: myRef.getChildren()){
-            User user = postSnapshot.getValue(User.class);
-            if(user.name.equals(name)){
-                editTextEmail.setText(user.email);
-                editTextMobile.setText(user.mobile);
-                Toast.makeText(getApplicationContext(), user.email, Toast.LENGTH_SHORT).show();
-            }
-        }
-    }*/
 
     public void newUser(String email, String password){
         mAuth.createUserWithEmailAndPassword(email, password)
@@ -112,16 +138,13 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public void onComplete(@NonNull Task<AuthResult> task) {
                         if (task.isSuccessful()) {
-                            // Sign in success, update UI with the signed-in user's information
-                            Log.d(TAG, "createUserWithEmail:success");
-                            FirebaseUser user = mAuth.getCurrentUser();
-                            // updateUI(user);
+                            saveInformation();
                         } else {
                             // If sign in fails, display a message to the user.
                             Log.w(TAG, "createUserWithEmail:failure", task.getException());
-                            Toast.makeText(MainActivity.this, "Authentication failed.",
+                            Toast.makeText(MainActivity.this, "Authentication failed. Email must be similar to (miguel@gmail.com)",
                                     Toast.LENGTH_SHORT).show();
-                            //  updateUI(null);
+
                         }
                     }
                 });
@@ -145,7 +168,6 @@ public class MainActivity extends AppCompatActivity {
                         // ...
                     }
                 });
-
     }
 
     public void existingUser(String email, String password){
@@ -154,26 +176,49 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public void onComplete(@NonNull Task<AuthResult> task) {
                         if (task.isSuccessful()) {
+                            errorAuth = false;
                             // Sign in success, update UI with the signed-in user's information
                             Log.d(TAG, "signInWithEmail:success");
                             FirebaseUser user = mAuth.getCurrentUser();
 
                         } else {
+                            errorAuth = true;
                             // If sign in fails, display a message to the user.
                             Log.w(TAG, "signInWithEmail:failure", task.getException());
-                            Toast.makeText(MainActivity.this, "Authentication failed.",
+                            Toast.makeText(MainActivity.this, "Authentication failed. This email is already on use in auth",
                                     Toast.LENGTH_SHORT).show();
                         }
                     }
                 });
     }
 
+    public void dialogShow(){
+        new AlertDialog.Builder(MainActivity.this)
+                .setMessage("This user is already exist. Do you want to continue anyway?")
+                .setTitle("Confirmation")
+                .setPositiveButton("Ok", new DialogInterface.OnClickListener()  {
+                    public void onClick(DialogInterface dialog, int id) {
+                        newUser(globalEmail,globalPassword);
+                    }
+                })
+                .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int id) {
+                        dialog.cancel();
+                    }
+                }).create().show();
+    }
+
+
     public boolean validateFields(){
-        if(name.getText().toString().isEmpty()||email.getText().toString().isEmpty()||password.getText().toString().isEmpty()){
+        globalName = name.getText().toString().trim();
+        globalEmail = email.getText().toString().trim();
+        globalPassword = password.getText().toString();
+
+        if(globalName.isEmpty()||globalEmail.isEmpty()||globalPassword.isEmpty()){
             Toast.makeText (this , "You need to fill all the fields" , Toast . LENGTH_LONG ) . show () ;
             return false;
         }
-        if(!existUri){
+        else if(!existUri){
             Toast.makeText (this ,"You need to take a photo" , Toast . LENGTH_LONG ) . show () ;
             return false;
         }
@@ -183,12 +228,9 @@ public class MainActivity extends AppCompatActivity {
                 Toast.makeText (this ,"In the password field you must type more than 6 characters" , Toast . LENGTH_LONG ) . show () ;
                 return false;
             }
-            else{
-            newUser(email.getText().toString(), password.getText().toString());
-            existingUser(email.getText().toString(),password.getText().toString());
             return true;
-            }
         }
+
     }
 
     private boolean hasCamera () {
@@ -205,9 +247,8 @@ public class MainActivity extends AppCompatActivity {
         uriImage = data.getData () ;
         if ( requestCode == IMAGE_CAPTURE ) {
             if ( resultCode == RESULT_OK ) {
-                Toast.makeText (this , "Photo saved to :\n" +
-                        uriImage , Toast . LENGTH_LONG ) . show () ;
                 existUri = true;
+                imagen.setImageURI(uriImage);
             } else if ( resultCode == RESULT_CANCELED ) {
                 Toast.makeText (this , " Cancelled .",
                         Toast . LENGTH_LONG ) . show () ;

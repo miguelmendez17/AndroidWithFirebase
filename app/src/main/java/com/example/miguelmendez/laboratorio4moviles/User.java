@@ -5,7 +5,6 @@ import android.net.Uri;
 public class User {
 
     public String nombre;
-    public Uri foto;
     public String correo;
     public String contrasenna;
 
@@ -15,14 +14,6 @@ public class User {
 
     public void setNombre(String nombre) {
         this.nombre = nombre;
-    }
-
-    public Uri getFoto() {
-        return foto;
-    }
-
-    public void setFoto(Uri foto) {
-        this.foto = foto;
     }
 
     public String getCorreo() {
